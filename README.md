@@ -1,15 +1,17 @@
-# Enterprise Cloud Data Pipelines (AWS Glue & PySpark)
+# Enterprise Cloud Data Engineering & DWH Optimization (AWS & PySpark)
 
-This repository serves as a production-ready portfolio demonstrating data engineering patterns leveraging serverless Apache Spark on AWS. It features end-to-end ETL pipelines designed for high scalability, data standardization, incremental loading strategies, and automated data lake file orchestration.
+This repository serves as a production-ready portfolio demonstrating data engineering patterns leveraging serverless Apache Spark and high-performance Data Warehouse strategies on AWS. It features end-to-end ETL pipelines alongside a real-world Data Warehouse refactoring project that achieved significant query performance optimization.
 
 ---
 
 ### 📂 Repository Structure
 
 ```text
-├── Pipelines/
+├── glue_jobs/
 │   ├── product_catalog_ingestion.py   # Data lake ingestion & master data quality
 │   ├── rfid_shipments_incremental.py  # High-watermark incremental ETL (RDS to Redshift)
 │   └── supplier_missing_products.py   # Multi-file vendor integration & string parsing
+├── dwh_refactoring/
+│   └── redshift_table_optimization.sql # SQL DDL showcasing Distribution and Sort Key strategies
 ├── README.md                          # Core documentation
 └── requirements.txt                   # Dependency mappings
