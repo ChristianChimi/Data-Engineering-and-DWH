@@ -1,6 +1,6 @@
 ## AWS Glue & PySpark ETL Pipelines
 
-This repository contains an enterprise-grade suite of AWS Glue jobs developed with PySpark and the AWS SDK (`boto3`). These pipelines implement robust data engineering practices, including data lake ingestion patterns, incremental loading strategies, and third-party vendor data integration.
+This repository contains an enterprise-grade suite of AWS Glue jobs developed with PySpark and the AWS SDK (`boto3`). These pipelines implement robust data engineering practices, including data lake ingestion patterns, incremental loading strategies, and third-party vendor data integration. Pipelines automatically run daily thanks to AWS Event Bridge schedules.
 
 ---
 
