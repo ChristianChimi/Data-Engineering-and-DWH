@@ -7,7 +7,7 @@ This repository serves as a production-ready portfolio demonstrating data engine
 ### 📂 Repository Structure
 
 ```text
-├── glue_jobs/
+├── Pipelines/
 │   ├── product_catalog_ingestion.py   # Data lake ingestion & master data quality
 │   ├── rfid_shipments_incremental.py  # High-watermark incremental ETL (RDS to Redshift)
 │   └── supplier_missing_products.py   # Multi-file vendor integration & string parsing
