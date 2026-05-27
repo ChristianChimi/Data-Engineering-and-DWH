@@ -2,7 +2,7 @@
 
 This directory contains the core implementation of an enterprise-grade Data Warehouse (DWH) refactoring project engineered on **Amazon Redshift**. 
 
-### 📈 Business & Engineering Impact
+### Business & Engineering Impact
 * **The Challenge:** Historical analytical models and core business reporting queries suffered from severe performance bottlenecks, frequently exceeding execution latencies of **over 2 minutes** per dashboard refresh. This was primarily caused by sub-optimal data distribution (heavy network shuffles across nodes), lack of dedicated physical sorting, and un-optimized multi-layered data modeling.
 * **The Solution:** Redesigned the data ingestion architecture into a decoupled, progressive three-layer layout (Layer 1 ──> Layer 1.5 ──> Layer 2), enforcing strict schema alignments, targeted data deduplication via window functions, and hardware-level distribution optimizations.
 * **The Impact:** Slashed core reporting query latency down to **approximately 5 seconds**, achieving an **over 90% performance optimization** across enterprise transactional workloads.
@@ -17,7 +17,7 @@ This directory contains the core implementation of an enterprise-grade Data Ware
 
 ---
 
-### 🛠️ Redshift Hardware-Level Optimization Strategies
+### Redshift Hardware-Level Optimization Strategies
 
 To achieve sub-second data processing and avoid expensive network shuffles during heavy aggregation phases, the following engine properties were applied:
 
