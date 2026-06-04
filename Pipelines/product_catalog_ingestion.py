@@ -17,10 +17,10 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-bucket = "enterprise-datalake-product-masterdata"
-tmp_bucket = "enterprise-glue-temporary-storage"
-dest_prefix = "ARCHIVED_BATCHES/"
-pattern = "*product_catalog_masterdata.csv"
+bucket = "company-data-lake-masterdata"
+tmp_bucket = "company-sftp-temp-data-stage"
+dest_prefix = "ARCHIVED_DATA/"
+pattern = "*product_masterdata.csv"
 
 s3 = boto3.client("s3")
 paginator = s3.get_paginator('list_objects_v2')
@@ -38,66 +38,75 @@ for page in pages:
                 break
 
 if file_exists:
-    print("Target file detected in root directory. Initiating Spark processing pipeline...")
+    print("Target file found. Starting Spark processing...")
+
     source_path = f"s3://{bucket}/{pattern}"
 
-    df_catalog = (
+    df_products = (
         spark.read
         .option("header", "true")
         .option("delimiter", ",")
         .csv(source_path)
         .select(
-            "vendor_sku",
-            "prod_descr",
-            "prod_cat_1",
-            "prod_cat_2",
-            "prod_cat_3",
-            "prod_cat_4",
-            "prod_cat_5",
+            "product_id",
+            "product_desc",
+            "category_level_1",
+            "category_level_2",
+            "category_level_3",
+            "category_level_4",
+            "category_level_5",
             "gender",
-            "utilizer",
+            "target_user",
             "age_range"
         )
-        .withColumn("filename", F.element_at(F.split(F.input_file_name(), "/"), -1))
     )
 
-    column_mapping = {
-        'vendor_sku': 'product_code',
-        'prod_descr': 'product_description',
-        'prod_cat_1': 'product_category_l1',
-        'prod_cat_2': 'product_category_l2',
-        'prod_cat_3': 'product_category_l3',
-        'prod_cat_4': 'product_category_l4',
-        'prod_cat_5': 'product_category_l5'
+    name_mapping = {
+        'product_id': 'ext_product_code',
+        'product_desc': 'ext_product_desc',
+        'category_level_1': 'ext_product_category1',
+        'category_level_2': 'ext_product_category2',
+        'category_level_3': 'ext_product_category3',
+        'category_level_4': 'ext_product_category4',
+        'category_level_5': 'ext_product_category5'
     }
 
-    df_catalog_renamed = df_catalog.select([
-        F.col(c).alias(column_mapping[c]) if c in column_mapping else F.col(c) 
-        for c in df_catalog.columns
+    df_products_renamed = df_products.select([
+        F.col(c).alias(name_mapping[c]) if c in name_mapping else F.col(c)
+         skate for c in df_products.columns
     ])
 
-    df_catalog_final = df_catalog_renamed.withColumn('record_date', F.current_timestamp())
-    df_clean = df_catalog_final.dropDuplicates()
+    df_products_final = df_products_renamed.withColumn(
+        "filename",
+        F.element_at(F.split(F.input_file_name(), "/"), -1)
+    ).withColumn(
+        "record_date",
+        F.to_timestamp(
+            F.to_date(
+                F.regexp_extract("filename", r"(\d{8})", 1),
+                "yyyyMMdd"
+            )
+        )
+    )
 
-    file_list = [row["filename"] for row in df_clean.select("filename").distinct().collect()]
+    file_list = [row["filename"] for row in df_products_final.select("filename").distinct().collect()]
 
-    dyf_catalog = DynamicFrame.fromDF(
-        dataframe=df_clean.drop("filename"),
+    dyf_products = DynamicFrame.fromDF(
+        dataframe=df_products_final.drop("filename"),
         glue_ctx=glueContext,
-        name="dyf_catalog"
+        name="dyf_products"
     )
 
     glueContext.write_dynamic_frame.from_options(
-        frame=dyf_catalog,
+        frame=dyf_products,
         connection_type="redshift",
         connection_options={
             "useConnectionProperties": "true",
             "connectionName": "Redshift Production JDBC Connection",
-            "dbtable": "layer1_staging.stg_product_catalog_masterdata",
-            "redshiftTmpDir": f"s3://{tmp_bucket}/tmp/glue_redshift_integration/",
-            "preactions": "TRUNCATE TABLE layer1_staging.stg_product_catalog_masterdata;"
+            "dbtable": "dw_stage.product_masterdata_core",
+            "redshiftTmpDir": f"s3://{tmp_bucket}/tmp/glue_redshift/"
         },
-        transformation_ctx="write_redshift_catalog"
+        transformation_ctx="write_redshift_products"
     )
 
     for filename in file_list:
@@ -111,11 +120,11 @@ if file_exists:
                 Key=dest_key
             )
             s3.delete_object(Bucket=bucket, Key=source_key)
-            print(f"File successfully archived: {source_key} -> {dest_key}")
+            print(f"File archived successfully: {source_key} -> {dest_key}")
         except Exception as e:
-            print(f"Failed to archive file {source_key}: {str(e)}")
+            print(f"Error moving file {source_key}: {str(e)}")
 
 else:
-    print("No matching files found in the root directory. Skipping execution batch.")
+    print("No target file found in root directory. Skipping execution.")
 
 job.commit()
