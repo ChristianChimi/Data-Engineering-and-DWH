@@ -1,5 +1,4 @@
 import sys
-import boto3
 from pyspark.context import SparkContext
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col, date_format
@@ -17,24 +16,24 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-SOURCE_TABLE = "source_database.tag_logs"
-TARGET_TABLE = "warehouse_layer1.rfid_case_shipments"
-TEMP_DIR = "s3://corporate-glue-processing-temp/tmp/glue_redshift/"
-MYSQL_CONNECTION = "aws_rds_mysql_jdbc_connection"
-REDSHIFT_CONNECTION = "aws_redshift_warehouse_jdbc_connection"
+SOURCE_TABLE = "source_database.device_logs"
+TARGET_TABLE = "dw_layer1.iot_telemetry_records"
+TEMP_DIR = "s3://company-sftp-temp-data-stage/tmp/glue_redshift/"
+MYSQL_CONNECTION = "RDS-MySQL-Production-Connection"
+REDSHIFT_CONNECTION = "Redshift Production JDBC Connection"
 
 dyf_redshift = glueContext.create_dynamic_frame.from_options(
     connection_type="redshift",
     connection_options={
         "useConnectionProperties": "true",
         "connectionName": REDSHIFT_CONNECTION,
-        "sampleQuery": f"SELECT MAX(date) AS max_date FROM {TARGET_TABLE}",
+        "sampleQuery": f"SELECT MAX(date + time) AS max_timestamp FROM {TARGET_TABLE}",
         "redshiftTmpDir": TEMP_DIR
     }
 )
 
 df_redshift = dyf_redshift.toDF()
-max_date = df_redshift.collect()[0]["max_date"]
+max_timestamp = df_redshift.collect()[0]["max_timestamp"]
 
 dyf_mysql = glueContext.create_dynamic_frame.from_options(
     connection_type="mysql",
@@ -47,11 +46,18 @@ dyf_mysql = glueContext.create_dynamic_frame.from_options(
 
 df = dyf_mysql.toDF()
 
-if max_date is not None:
-    print(f"Incremental filter active. Loading records newer than: {max_date}")
-    df_filtered = df.filter(col("date") > max_date)
+if max_timestamp is not None:
+    print(f"Incremental filter active. Loading records newer than: {max_timestamp}")
+    
+    df_with_ts = df.withColumn(
+        "source_timestamp",
+        F.to_timestamp(F.concat_ws(" ", col("date"), col("time")), "yyyy-MM-dd HH:mm:ss")
+    )
+    
+    df_filtered = df_with_ts.filter(col("source_timestamp") > max_timestamp)
+    df_filtered = df_filtered.drop("source_timestamp")
 else:
-    print("No max date found on Redshift target. Executing full load.")
+    print("No existing data found in target. Performing full load extraction.")
     df_filtered = df
 
 df_transformed = df_filtered.withColumn("id", col("id").cast("long"))
