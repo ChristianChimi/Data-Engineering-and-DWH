@@ -12,12 +12,12 @@ This repository contains an enterprise-grade suite of AWS Glue jobs developed wi
 * **Data Processing:** Implemented robust schema mapping to rename and align incoming fields with the corporate data warehouse schema, applied data quality checks via duplicate removal (`dropDuplicates`), and appended audit metadata (`ingestion_timestamp`).
 * **Storage & Archiving:** Wrote the cleaned data into AWS Redshift using Glue DynamicFrames and handled post-processing file orchestration by archiving processed files into a designated `DONE/` S3 prefix to maintain a clean landing zone.
 
-#### 2. Incremental RFID Cargo Shipments ETL
-* **Objective:** Built a high-performance incremental ETL pipeline to synchronize real-time logistic and RFID tracking data from a relational database to an enterprise data warehouse.
-* **Technical Details:** Developed a hybrid AWS Glue job connecting an operational MySQL database (RDS) to an AWS Redshift data warehouse using JDBC connections.
-* **Incremental Logic:** Implemented an optimized high-watermark query (`SELECT MAX(date)`) on Redshift to dynamically identify the last ingested record. The pipeline extracts only new logs from the source database, drastically reducing network I/O and processing times.
-* **Transformation & Loading:** Performed PySpark data type casting (converting IDs to `long`) and time-string standardization (`HH:mm:ss`) before loading the incremental delta into the target analytical layer using an S3 temporary directory for staging.
-
+#### 2. Cross-Database Incremental Telemetry Data Pipeline
+* **Objective:** Developed an automated incremental ETL pipeline to synchronize high-volume IoT device and telemetry logs from an operational MySQL database into an Amazon Redshift data warehouse.
+* **Technical Details:** Engineered a hybrid AWS Glue architecture utilizing PySpark and AWS Glue DynamicFrames to read concurrently across relational and analytical databases via decoupled JDBC network connections.
+* **Data Engineering Techniques:** Implemented an efficient incremental loading strategy by executing push-down sample queries to fetch the maximum target timestamp, dynamically filtering incoming source transactions. Utilized advanced Spark SQL functions (`concat_ws`, `to_timestamp`, and `date_format`) to reconstruct unified datetime objects from split source attributes, ensuring schema consistency and data type alignment.
+* **Data Warehousing & File Management:** Orchestrated transactional appending to Target Layer-1 analytical tables using AWS Glue’s S3-backed temporary staging directory configuration, optimizing data loading speeds while preventing duplicate record generation.
+  
 #### 3. Automated Vendor Product Masterdata Ingestion Pipeline
 * **Objective:** Designed and implemented an automated data pipeline to ingest, clean, and structure daily product masterdata delivered by external third-party suppliers.
 * **Technical Details:** Built a PySpark and AWS Glue architecture to scan decoupled S3 staging zones, dynamically detect inbound vendor files using `boto3` pagination, and isolate target CSV streams for high-throughput processing.
