@@ -18,12 +18,11 @@ This repository contains an enterprise-grade suite of AWS Glue jobs developed wi
 * **Incremental Logic:** Implemented an optimized high-watermark query (`SELECT MAX(date)`) on Redshift to dynamically identify the last ingested record. The pipeline extracts only new logs from the source database, drastically reducing network I/O and processing times.
 * **Transformation & Loading:** Performed PySpark data type casting (converting IDs to `long`) and time-string standardization (`HH:mm:ss`) before loading the incremental delta into the target analytical layer using an S3 temporary directory for staging.
 
-#### 3. Automated Third-Party Vendor Data Processing
-* **Objective:** Designed an end-to-end multi-file pipeline to ingest, parse, and structure daily logistical data and depot master data provided by external wholesale suppliers.
-* **Technical Details:** Orchestrated a PySpark architecture to simultaneously handle transactional data (missing items logs) and dimensional data (depot master data catalogs) from decoupled S3 paths.
-* **Data Engineering Techniques:** Utilized advanced Spark SQL functions (`regexp_extract`, `element_at`, and `split`) to isolate specific date-time patterns from filenames, turning raw file metadata into partition-ready timestamp columns. Implemented string cleaning via `trim` on critical lookup keys (`depot_id`, `product_code`) to ensure referential integrity.
-* **Data Warehousing & File Management:** Separately transformed and loaded both datasets into distinct target tables within AWS Redshift. Automated the post-ingestion cleanup phase by using the AWS SDK (`boto3`) to securely move raw vendor files into an analytical archive folder upon successful execution.
-
+#### 3. Automated Vendor Product Masterdata Ingestion Pipeline
+* **Objective:** Designed and implemented an automated data pipeline to ingest, clean, and structure daily product masterdata delivered by external third-party suppliers.
+* **Technical Details:** Built a PySpark and AWS Glue architecture to scan decoupled S3 staging zones, dynamically detect inbound vendor files using `boto3` pagination, and isolate target CSV streams for high-throughput processing.
+* **Data Engineering Techniques:** Utilized advanced Spark SQL functions (`regexp_extract`, `element_at`, and `split`) to parse and extract dynamic date-timestamp patterns directly from file metadata. Developed column-mapping layers to standardize external schemas, enforce consistent naming conventions, and guarantee structural integrity across heterogeneous product attributes.
+* **Data Warehousing & File Management:** Transformed and safely loaded the cleaned data assets into core Amazon Redshift data warehouse staging tables via AWS Glue DynamicFrames. Engineered an automated post-ingestion cleanup mechanism using the AWS SDK to atomically move processed files into a secure analytical archive directory upon successful execution.
 ---
 
 ### Core Tech Stack
