@@ -1,6 +1,6 @@
 # Enterprise Cloud Data Engineering & DWH Optimization (AWS, PySpark and SQL)
 
-This repository serves as a production-ready portfolio demonstrating advanced data engineering patterns leveraging serverless Apache Spark and high-performance Data Warehouse strategies on AWS. It features robust, end-to-end ETL pipelines alongside a real-world Data Warehouse refactoring project focused on Performance Engineering, transitioning legacy legacy structures into business-ready Data Products.
+This repository showcases anonymized data engineering projects inspired by production environments. It includes PySpark ETL pipelines running on AWS Glue, incremental ingestion strategies, Redshift performance optimization and Data Warehouse refactoring following Medallion architecture principles.
 
 ---
 
