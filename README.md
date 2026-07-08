@@ -11,6 +11,7 @@ This repository showcases anonymized data engineering projects inspired by produ
 │   ├── product_catalog_ingestion.py   # Data lake ingestion & master data quality (PySpark)
 │   ├── rfid_shipments_incremental.py  # High-watermark incremental ETL (RDS to Redshift)
 │   └── supplier_missing_products.py   # Multi-file vendor integration & string parsing
+│   └── stored_procedure.sql           # Stored procedure to update supplier missing products historic table
 ├── dwh_refactoring/
 │   ├── logistic_schema_DWH.png        # Lineage and transformation architecture blueprint
 │   ├── stored_procedure_upsert.sql    # Atomic partition swapping & hybrid incremental PL/pgSQL
