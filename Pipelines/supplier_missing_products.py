@@ -1,3 +1,34 @@
+# Product OOS & Supplier Depot Masterdata Ingestion Pipeline
+
+## Project Overview
+This repository contains an enterprise-grade, serverless ETL pipeline built using **AWS Glue** and **PySpark**. The script automates the dual ingestion of third-party wholesaler data: product out-of-stock (OOS/missing) records and supplier depot masterdata mapping. 
+
+The architecture features strict schema enforcement, metadata timestamp parsing from file names using regex, string data sanitation via distributed trimming, and atomic post-processing object migration to maintain an un-cluttered S3 data lake layer.
+
+---
+
+## Architecture Highlights
+* **Dual Ingestion Engine:** Processes two distinct business entities (OOS logs and Depot masterdata) sequentially within a single high-performance serverless Spark execution.
+* **Metadata-Driven Lineage:** Parses complex file structural naming conventions using regex patterns (`\d{8}_\d{6}`) to capture snapshot execution datetimes, ensuring data lineage alongside native system timestamps.
+* **Strict Type & Schema Enforcement:** Implements programmatic `StructType` compilation layers to force datatype alignment on external masterdata files, preventing silent staging failures.
+* **Data Sanitation Layer:** Leverages distributed PySpark SQL functions (`trim`) to eliminate trailing spaces or ingestion noise from core transactional primary keys (`minsan`, `id_deposito`) prior to database loading.
+* **Transactional Archive Strategy:** Dynamically isolates individual processed file strings via `distinct().collect()`, performing programmatic atomic loop migrations (`copy_object` and `delete_object`) into a secure storage archive path upon successful Redshift commit.
+
+---
+
+## Tech Stack
+* **Language:** Python 3
+* **Distributed Compute:** Apache Spark (PySpark Core & Spark SQL)
+* **Serverless Orchestration:** AWS Glue (Serverless Spark Engine)
+* **SDKs & Libraries:** Boto3 (AWS SDK)
+* **Data Warehousing:** Amazon Redshift (Columnar DW)
+* **Storage:** Amazon S3 (Object Storage / Data Lake)
+
+---
+
+## Production Pipeline Script
+
+```python
 import sys
 import boto3
 from pyspark.context import SparkContext
@@ -24,6 +55,8 @@ bucket = "corporate-vendor-data-lake"
 source_path = f"s3://{bucket}/wholesalers/supplier_a/missing_products_*.csv"
 source_prefix = "wholesalers/supplier_a/"
 dest_prefix = "wholesalers/supplier_a/DONE/"
+
+# --- ENTITY 1: Missing Products (OOS Logs) Processing ---
 
 df_mancanti = (
     spark.read 
@@ -82,6 +115,9 @@ for row in lista_file:
     )
     s3.delete_object(Bucket=bucket, Key=source_key)
     print(f"Moved to DONE: {filename}")
+
+
+# --- ENTITY 2: Depot Masterdata Mapping Processing ---
 
 schema = StructType([
     StructField("cod_ministeriale", StringType(), True),
