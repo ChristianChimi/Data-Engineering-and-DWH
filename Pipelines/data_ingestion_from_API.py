@@ -1,3 +1,32 @@
+# Multi-Endpoint REST API Ingestion & JSON Flattening Pipeline
+
+## Project Overview
+This repository contains an production-ready, enterprise-grade ETL pipeline developed using **AWS Glue** and **PySpark**. The pipeline is engineered to ingest highly nested logistics data (Shipments and Pallets) from an external third-party REST API, back up the raw payloads into a partitioned Amazon S3 Data Lake, flatten complex JSON data structures, and securely load the normalized entities into an **Amazon Redshift** data warehouse.
+
+The architecture addresses common production challenges such as **late-arriving data** (via a rolling 7-day synchronization window) and data warehouse write contention (via an atomic staging truncation pattern).
+
+---
+
+## Architecture Highlights
+* **Multi-Cloud/Hybrid Ingestion:** Programmatically handles simultaneous API data collection, parallel in-memory Spark processing, and atomic loading.
+* **Bronze Layer Storage:** Implements structural archiving of raw JSON files directly into a partitioned Amazon S3 layout (`year=YYYY/month=MM/day=DD`) via `boto3` for auditability and replayability.
+* **Silver Layer Normalization:** Converts deep JSON arrays into decoupled, flat relational relational structures using Spark SQL optimizations and distributed array explosions (`explode`).
+* **Safe Gold Data Warehouse Loading:** Eliminates direct `UPSERT` overhead on heavy analytical tables by executing transactional `TRUNCATE` operations as JDBC pre-actions on decoupled staging tables before doing parallel bulk-loading via Glue DynamicFrames.
+
+---
+
+## Tech Stack
+* **Language:** Python 3
+* **Distributed Compute:** Apache Spark (PySpark Core & Spark SQL)
+* **Serverless Orchestration:** AWS Glue (Serverless Spark Engine)
+* **SDKs & Libraries:** Boto3, Requests
+* **Data Warehousing:** Amazon Redshift (Columnar DW)
+* **Storage:** Amazon S3 (Object Storage / Data Lake)
+
+---
+
+## Production Pipeline Script
+
 import sys, json, requests, boto3
 from datetime import datetime, timedelta
 from pyspark.context import SparkContext
