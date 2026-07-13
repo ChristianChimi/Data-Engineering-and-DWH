@@ -1,3 +1,33 @@
+# Automated Vendor Product Masterdata Ingestion Pipeline
+
+## Project Overview
+This repository contains a production-ready, serverless ETL pipeline developed using **AWS Glue** and **PySpark**. The pipeline is designed to dynamically detect, clean, and structure daily product masterdata delivered by external third-party suppliers into an Amazon S3 landing zone, safely loading the transformed datasets into an **Amazon Redshift** data warehouse staging layer.
+
+The architecture features programmatic file pattern matching, metadata-driven schema enrichment, and an automated post-ingestion cleanup mechanism to enforce a pristine landing zone.
+
+---
+
+## Architecture Highlights
+* **Decoupled S3 Scanning:** Utilizes low-overhead `boto3` pagination combined with `fnmatch` regular expressions to verify target file availability before spinning up distributed compute resources.
+* **Dynamic Metadata Extraction:** Leverages advanced Spark SQL functions (`regexp_extract`, `split`, and `element_at`) to programmatically parse execution timestamps and snapshot dates directly from the file naming convention.
+* **Schema Standardization Layer:** Implements strict column-mapping workflows to standardize external vendor structures and map heterogeneous source fields to the enterprise analytical schema.
+* **Atomic File Management:** Includes a secure post-processing orchestration layer that handles object migration (`copy_object` and `delete_object`) into an archival prefix upon successful database execution.
+
+---
+
+## Tech Stack
+* **Language:** Python 3
+* **Distributed Compute:** Apache Spark (PySpark Core & Spark SQL)
+* **Serverless Orchestration:** AWS Glue (Serverless Spark Engine)
+* **SDKs & Libraries:** Boto3, Fnmatch
+* **Data Warehousing:** Amazon Redshift (Columnar DW)
+* **Storage:** Amazon S3 (Object Storage / Landing Zone)
+
+---
+
+## Production Pipeline Script
+
+```python
 import sys
 import boto3
 import fnmatch
@@ -26,7 +56,6 @@ s3 = boto3.client("s3")
 paginator = s3.get_paginator('list_objects_v2')
 
 pages = paginator.paginate(Bucket=bucket, Delimiter='/')
-
 file_exists = False
 
 for page in pages:
@@ -73,7 +102,7 @@ if file_exists:
 
     df_products_renamed = df_products.select([
         F.col(c).alias(name_mapping[c]) if c in name_mapping else F.col(c)
-         skate for c in df_products.columns
+        for c in df_products.columns
     ])
 
     df_products_final = df_products_renamed.withColumn(
@@ -114,17 +143,3 @@ if file_exists:
         dest_key = f"{dest_prefix}{filename}"
 
         try:
-            s3.copy_object(
-                Bucket=bucket,
-                CopySource={"Bucket": bucket, "Key": source_key},
-                Key=dest_key
-            )
-            s3.delete_object(Bucket=bucket, Key=source_key)
-            print(f"File archived successfully: {source_key} -> {dest_key}")
-        except Exception as e:
-            print(f"Error moving file {source_key}: {str(e)}")
-
-else:
-    print("No target file found in root directory. Skipping execution.")
-
-job.commit()
