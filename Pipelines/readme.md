@@ -6,8 +6,6 @@ This repository contains an enterprise-grade suite of AWS Glue jobs developed wi
 
 ### Pipelines Overview
 
-### Pipelines Overview
-
 #### 1. Product Catalog Ingestion & Standardization
 * **Objective:** Developed an automated data lake ingestion pipeline to process and standardize incoming product master data from flat files.
 * **Technical Details:** Leveraged AWS Glue and PySpark to dynamically list and read raw CSV files directly from the root of an Amazon S3 bronze bucket using `boto3` pagination.
